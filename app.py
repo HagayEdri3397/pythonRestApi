@@ -1,18 +1,15 @@
-from flask import Flask, request, jsonify, current_app
+from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import func, select, create_engine
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timedelta
-import sched
 import time
 import threading
-from const_params.const import HTTP_BAD_REQUEST, HTTP_CREATED,HTTP_NOT_FOUND, HTTP_INTERNAL_SERVER_ERROR
+from const_params.const import HTTP_BAD_REQUEST, HTTP_CREATED, HTTP_INTERNAL_SERVER_ERROR
 from validation.validationService import validate_event_data
-
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///events.db'
 db = SQLAlchemy(app)
-engine = create_engine("sqlite:///events.db") 
 
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -22,6 +19,7 @@ class Event(db.Model):
     participants = db.Column(db.Integer)
     startDate = db.Column(db.DateTime, nullable=False)
     createDate = db.Column(db.DateTime, default=func.now())
+    hasReminder = db.Column(db.Boolean, default=False)
     def as_dict(self):
         return {
             'id': self.id,
@@ -34,26 +32,26 @@ class Event(db.Model):
         }
 
 
-def remindManager():
-    while True:
-        current_time = datetime.now()
-        
-        # res = getEventsToRemined()
-        # print(res)
-        # for event in events_reminders_list:
-        #     print(event.startDate)
-        #     if event.startDate - timedelta(minutes=30) <= current_time:
-        #         send_reminder(event.id, event.title)
-        #         events_reminders_list.remove(event)
-        time.sleep(1)
+def reminders_manager():
+    with app.app_context():
+        while True:
+            current_time = datetime.now()
+            reminder_time = current_time + timedelta(minutes=30)
 
-def getEventsToRemined():
-    current_time = datetime.now()
-    stmt = select(Event).where(Event.startDate -timedelta(minutes=30) <= current_time)
-    with engine.connect() as conn:
-        results = conn.execute(stmt).scalars()
-    return results
+            events_to_remind = Event.query.filter(
+                Event.hasReminder == False,
+                Event.startDate >= current_time,
+                Event.startDate <= reminder_time).all()
 
+            # Send reminders for each event
+            for event in events_to_remind:
+                send_reminder(event.id, event.title)
+                event = Event.query.get_or_404(event.id)
+                event.hasReminder = True
+                db.session.commit()
+            
+            time.sleep(60) 
+ 
 def send_reminder(event_id, title):
     print(f"Reminder for event '{title}' with ID {event_id}: The event is starting in 30 minutes!")
     
@@ -62,11 +60,14 @@ def schedule_event():
     try:
         request_data = request.get_json(force=True)
         validate_event_data(request_data)
+        
         new_event = Event(title=request_data['title'],
                       location=request_data.get('location'),
                       venue=request_data.get('venue'),
                       startDate=datetime.strptime(request_data['startDate'], '%Y-%m-%d %H:%M:%S'),
                       participants=request_data.get('participants'))
+        
+
         db.session.add(new_event)
         db.session.commit()
 
@@ -99,7 +100,7 @@ def get_all_events():
 
 @app.route('/api/event/<int:event_id>', methods=['GET'])
 def get_event(event_id):
-    event = Event.query.get_or_HTTP_NOT_FOUND(event_id)
+    event = Event.query.get_or_404(event_id)
     event_details = event.as_dict()
     return jsonify({'event': event_details})
 
@@ -107,7 +108,7 @@ def get_event(event_id):
 @app.route('/api/event/<int:event_id>', methods=['PUT'])
 def update_event(event_id):
     try:
-        event = Event.query.get_or_HTTP_NOT_FOUND(event_id)
+        event = Event.query.get_or_404(event_id)
         request_data = request.get_json()
         validate_event_data(request_data)
 
@@ -133,7 +134,7 @@ def update_event(event_id):
 
 @app.route('/api/event/<int:event_id>', methods=['DELETE'])
 def delete_event(event_id):
-    event = Event.query.get_or_HTTP_NOT_FOUND(event_id)
+    event = Event.query.get_or_404(event_id)
     db.session.delete(event)
     db.session.commit()
     return jsonify({'message': 'Event deleted successfully'})
@@ -187,7 +188,7 @@ def update_events():
         if event_id is None:
             return jsonify({'error': 'Each event in the batch must have an "id" field.'}), HTTP_BAD_REQUEST
 
-        event = Event.query.get_or_HTTP_NOT_FOUND(event_id)
+        event = Event.query.get_or_404(event_id)
         event.title = event_data.get('title', event.title)
         event.location = event_data.get('location', event.location)
         event.venue = event_data.get('venue', event.venue)
@@ -208,7 +209,7 @@ def delete_events():
 
     deleted_events = []
     for event_id in data:
-        event = Event.query.get_or_HTTP_NOT_FOUND(event_id)
+        event = Event.query.get_or_404(event_id)
         db.session.delete(event)
         deleted_events.append({'id': event.id, 'message': 'Event deleted successfully'})
 
@@ -219,6 +220,6 @@ def delete_events():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        thread = threading.Thread(target=remindManager, args=(), daemon=True)
-        thread.start()
-        app.run(debug=True)
+    thread = threading.Thread(target=reminders_manager)
+    thread.start()
+    app.run(debug=True)
