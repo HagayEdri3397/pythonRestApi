@@ -7,6 +7,8 @@ import time
 import threading
 from const_params.const import HTTP_BAD_REQUEST, HTTP_CREATED, HTTP_INTERNAL_SERVER_ERROR
 from validation.validationService import validate_event_data
+from flask_socketio import SocketIO, emit
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///events.db'
 db = SQLAlchemy(app)
@@ -31,6 +33,14 @@ class Event(db.Model):
             'createDate': self.createDate.strftime('%Y-%m-%d %H:%M:%S')
         }
 
+socketio = SocketIO(app)
+
+# Trigger this event to notify subscribers of event changes
+@socketio.on('event_updated')
+def handle_event_updated(data):
+    # Data can include details about the event change
+    event_id = data.get('event_id')
+    emit('event_updated', {'event_id': event_id}, broadcast=True)
 
 def reminders_manager():
     with app.app_context():
@@ -70,7 +80,7 @@ def schedule_event():
 
         db.session.add(new_event)
         db.session.commit()
-
+        handle_event_updated({'event_id': new_event.id})
         return jsonify({'message': 'Event scheduled successfully'}), HTTP_CREATED
 
     except ValueError as e:
