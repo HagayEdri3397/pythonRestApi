@@ -3,14 +3,15 @@ import threading
 import atexit
 
 from routes import events_page, event_page
-from modules import reminders_manager, close_reminders_manager
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///events.db'
+from modules import reminders_manager, close_reminders_manager, limiter
 from database import db
 
+app = Flask(__name__)
+
+limiter.init_app(app)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///events.db'
 db.init_app(app)
-from models import Event
 
 app.register_blueprint(events_page)
 app.register_blueprint(event_page)

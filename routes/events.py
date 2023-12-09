@@ -1,7 +1,7 @@
 from sqlite3 import IntegrityError
 from flask import Blueprint, request, jsonify
 from models import Event
-from const_params.const import HTTP_BAD_REQUEST, HTTP_CREATED, HTTP_INTERNAL_SERVER_ERROR
+from const_params.const import HTTP_BAD_REQUEST, HTTP_CREATED, HTTP_INTERNAL_SERVER_ERROR, HTTP_NOT_FOUND
 from datetime import datetime
 from database import db
 from validation import validate_event_data
@@ -60,7 +60,10 @@ def update_events():
                 return jsonify({'error': 'Each event in the batch must have an "id" field.'}), HTTP_BAD_REQUEST
             
             validate_event_data(event_data)
-            event = Event.query.get_or_404(event_id)
+            event = Event.query.get(event_id)
+            if not event:
+                updated_events.append({'id': event_id, 'error': 'Event not found'})
+                continue
             event.title = event_data.get('title', event.title)
             event.location = event_data.get('location', event.location)
             event.venue = event_data.get('venue', event.venue)
@@ -89,7 +92,10 @@ def delete_events():
 
     deleted_events = []
     for event_id in data:
-        event = Event.query.get_or_404(event_id)
+        event = Event.query.get(event_id)
+        if not event:
+            deleted_events.append({'id': event_id, 'error': 'Event not found'})
+            continue
         db.session.delete(event)
         deleted_events.append({'id': event.id, 'message': 'Event deleted successfully'})
 
@@ -101,6 +107,7 @@ def delete_events():
 def get_all_events():
     location = request.args.get('location')
     venue = request.args.get('venue')
+    print(location)
     query = Event.query
     if location:
         query = query.filter(Event.location == location)

@@ -36,8 +36,8 @@ Make sure you have the following installed on your machine:
    
 2. Create and activate a virtual environment (optional but recommended):
 ```
-virtualenv venv
-source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+virtualenv .venv
+source .venv/bin/activate  # On Windows, use `.venv\Scripts\activate`
 ```
 3. Install dependencies:
 ```
@@ -171,10 +171,12 @@ Body:
 
 ### Request
 
-`GET /api/events`
+`GET /api/events?location=value&venue=value`
 
     curl -i -H 'Accept: application/json' http://localhost:5000/api/events
 
+### Description
+location & venue are optional parameters
 ### Response
 
     HTTP/1.1 200 OK

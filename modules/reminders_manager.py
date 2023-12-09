@@ -26,7 +26,7 @@ def reminders_manager(app_context):
         # Send reminders for each event
         for event in events_to_remind:
             send_reminder(event.id, event.title)
-            event = Event.query.get_or_404(event.id)
+            event = Event.query.get(event.id)
             event.hasReminder = True
             db.session.commit()
 
