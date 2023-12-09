@@ -1,7 +1,7 @@
 from sqlite3 import IntegrityError
 from flask import Blueprint, request, jsonify
 from const_params.const import HTTP_BAD_REQUEST, HTTP_CREATED, HTTP_INTERNAL_SERVER_ERROR
-from validation.validationService import validate_event_data
+from validation import validate_event_data
 from models import Event
 from database import db
 from datetime import datetime

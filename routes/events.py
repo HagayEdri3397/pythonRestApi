@@ -1,8 +1,10 @@
+from sqlite3 import IntegrityError
 from flask import Blueprint, request, jsonify
 from models import Event
-from const_params.const import HTTP_BAD_REQUEST, HTTP_CREATED
+from const_params.const import HTTP_BAD_REQUEST, HTTP_CREATED, HTTP_INTERNAL_SERVER_ERROR
 from datetime import datetime
 from database import db
+from validation import validate_event_data
 
 events_page = Blueprint('events_page', __name__, template_folder='routes/events')
 
@@ -44,29 +46,39 @@ def create_events():
 
 @events_page.route('/api/events', methods=['PUT'])
 def update_events():
-    data = request.get_json()
+    try:
+        data = request.get_json()
 
-    if not isinstance(data, list):
-        return jsonify({'error': 'Invalid data format. Expected a list of events.'}), HTTP_BAD_REQUEST
+        if not isinstance(data, list):
+            return jsonify({'error': 'Invalid data format. Expected a list of events.'}), HTTP_BAD_REQUEST
 
-    updated_events = []
-    for event_data in data:
-        event_id = event_data.get('id')
+        updated_events = []
+        for event_data in data:
+            event_id = event_data.get('id')
 
-        if event_id is None:
-            return jsonify({'error': 'Each event in the batch must have an "id" field.'}), HTTP_BAD_REQUEST
+            if event_id is None:
+                return jsonify({'error': 'Each event in the batch must have an "id" field.'}), HTTP_BAD_REQUEST
+            
+            validate_event_data(event_data)
+            event = Event.query.get_or_404(event_id)
+            event.title = event_data.get('title', event.title)
+            event.location = event_data.get('location', event.location)
+            event.venue = event_data.get('venue', event.venue)
+            event.participants = event_data.get('participants', event.participants)
+            event.startDate = datetime.strptime(event_data['startDate'], '%Y-%m-%d %H:%M:%S')
 
-        event = Event.query.get_or_404(event_id)
-        event.title = event_data.get('title', event.title)
-        event.location = event_data.get('location', event.location)
-        event.venue = event_data.get('venue', event.venue)
-        event.participants = event_data.get('participants', event.participants)
-        event.startDate = datetime.strptime(event_data['startDate'], '%Y-%m-%d %H:%M:%S')
+            db.session.commit()
+            updated_events.append({'id': event.id, 'message': 'Event updated successfully'})
+        return jsonify({'events': updated_events})
 
-        db.session.commit()
-        updated_events.append({'id': event.id, 'message': 'Event updated successfully'})
-
-    return jsonify({'events': updated_events})
+    except ValueError as e:
+        return jsonify({'error': str(e)}), HTTP_BAD_REQUEST
+    except IntegrityError as e:
+        db.session.rollback()
+        return jsonify({'error': 'Database error. Duplicate entry or other integrity violation.'}), HTTP_BAD_REQUEST
+    except Exception as e:
+        return jsonify({'error': str(e)}), HTTP_INTERNAL_SERVER_ERROR
+    
 
 @events_page.route('/api/events', methods=['DELETE'])
 def delete_events():
