@@ -1,6 +1,6 @@
 from sqlite3 import IntegrityError
 from flask import Blueprint, request, jsonify
-from const_params.const import HTTP_BAD_REQUEST, HTTP_CREATED, HTTP_INTERNAL_SERVER_ERROR
+from const_params.const import HTTP_BAD_REQUEST, HTTP_CREATED, HTTP_INTERNAL_SERVER_ERROR, HTTP_NOT_FOUND
 from validation import validate_event_data
 from models import Event
 from database import db
@@ -11,7 +11,9 @@ event_page = Blueprint('event_page', __name__, template_folder='routes')
 @event_page.route('/api/event/<int:event_id>', methods=['GET'])
 @limiter.limit("5 per minute")
 def get_event(event_id):
-    event = Event.query.get_or_404(event_id)
+    event = Event.query.get(event_id)
+    if not event:
+        return jsonify({'error': 'Event not found'}), HTTP_NOT_FOUND 
     event_details = event.as_dict()
     return jsonify({'event': event_details})
 
@@ -19,7 +21,9 @@ def get_event(event_id):
 @event_page.route('/api/event/<int:event_id>', methods=['PUT'])
 def update_event(event_id):
     try:
-        event = Event.query.get_or_404(event_id)
+        event = Event.query.get(event_id)
+        if not event:
+            return jsonify({'error': 'Event not found'}), HTTP_NOT_FOUND 
         request_data = request.get_json()
         validate_event_data(request_data)
 
@@ -41,7 +45,9 @@ def update_event(event_id):
 
 @event_page.route('/api/event/<int:event_id>', methods=['DELETE'])
 def delete_event(event_id):
-    event = Event.query.get_or_404(event_id)
+    event = Event.query.get(event_id)
+    if not event:
+        return jsonify({'error': 'Event not found'}), HTTP_NOT_FOUND 
     db.session.delete(event)
     db.session.commit()
     return jsonify({'message': 'Event deleted successfully'})
