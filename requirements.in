@@ -2,3 +2,5 @@ flask
 flask_sqlalchemy
 sqlalchemy
 Flask-Limiter
+Flask-JWT-Extended
+Flask-Bcrypt
