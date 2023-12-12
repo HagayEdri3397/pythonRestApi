@@ -14,21 +14,28 @@ from flask_socketio import join_room, leave_room
 # Client can join to room and get real-time updates about event status 
 @socketioServer.on('join')
 def on_join(data):
-    if not data['room']: 
-        return
-    event_id = data['room']
-    room = f'event_{event_id}'
-    print(f'user joined to room {room}')
-    join_room(room)
+    try:
+        event_id = data['room']
+        print(event_id)
+        room = f'event_{event_id}'
+        print(f'user joined to room {room}')
+        join_room(room)
+    
+    except Exception as e:
+        print("Got Invalid data")
+    
 
 @socketioServer.on('leave')
 def on_leave(data):
-    if not data['room']: 
-        return
-    event_id = data['room']
-    room = f'event_{event_id}'
-    print(f'user joined to room {room}')
-    leave_room(room)
+    try:
+        event_id = data['room']
+        room = f'event_{event_id}'
+        print(f'user joined to room {room}')
+        leave_room(room)
+    
+    except Exception as e:
+        print("Got Invalid data")
+    
 
 def notify_subscribers_ws(event_id, event_type):
     message = f"The event {event_id} has {event_type}"
