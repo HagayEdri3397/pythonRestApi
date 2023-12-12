@@ -55,7 +55,7 @@ python app.py
 
 # API-Documentation
 
-## Schedule-a-new-event
+## Schedule a new eventS
 
 ### Request
 
