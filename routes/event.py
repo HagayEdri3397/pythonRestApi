@@ -37,7 +37,6 @@ def update_event(event_id):
         db.session.commit()
 
         #notifyAllSucscribers
-        print("aaa")
         notify_subscribers(event_id, event.subscribers.all(), 'updated')
         notify_subscribers_ws(event_id, 'updated')
     except ValueError as e:
