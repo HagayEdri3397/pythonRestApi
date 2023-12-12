@@ -6,7 +6,7 @@ Rest api for alfabet
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
 - [API Documentation](#API-Documentation)
-  - [CreateNewEvent](#Schedule a new event)
+  - [CreateNewEvent](#Schedule-a-new-event)
   - [GetAnEvent](#Get a specific event)
   - [GetAnUnExsitEvent](#Get a non-existent event)
   - [DeleteAnEvent](#Delete an event)
@@ -16,6 +16,10 @@ Rest api for alfabet
   - [UpdateMultipleEvents](#Change a batch of events)
   - [DeleteMultipleEvents](#Delete a batch of events)
   - [SortEvents](#Sort events by 'startDate', 'participants', 'createDate')
+  - [Register](#Register as a new user)
+  - [Login](#Login as exist user)
+  - [SubscribeToEvent](#Subscribe to event)
+  - [UnSubscribeFromEvent](#UnSubscribe from event)
   
   
 
@@ -51,7 +55,7 @@ python app.py
 
 # API-Documentation
 
-## Schedule a new event
+## Schedule-a-new-event
 
 ### Request
 
@@ -379,4 +383,91 @@ location & venue are optional parameters
     ]
 }
 
+## Register as a new user
 
+### Request
+
+`POST /api/register`
+
+    curl -i -H 'Accept: application/json' -X POST http://localhost:5000/api/register`
+	
+	Body
+	{
+	"username": "username",
+	"password": "secret_password"
+	}
+	
+### Response
+
+    HTTP/1.1 201 Created
+    Status: 201 Created
+    Content-Type: application/json
+
+{
+    "message": "User registered successfully"
+}
+
+## Login as exist user
+
+### Request
+
+`POST /api/login`
+
+    curl -i -H 'Accept: application/json' -X POST http://localhost:5000/api/login`
+	
+	Body
+	{
+	"username": "username",
+	"password": "secret_password"
+	}
+	
+### Response
+
+    HTTP/1.1 200 OK
+    Status: 200 OK
+    Connection: close
+    Content-Type: application/json
+
+{
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTcwMjM3NjQ3MywianRpIjoiNGUyNTI1MDQtMmZlMC00YWJhLWExYWEtYTU5ZjFjY2RmYjMxIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6ImhhZ2F5IiwibmJmIjoxNzAyMzc2NDczLCJleHAiOjE3MDIzNzczNzN9.Alm0-hqGncr-pBCB_UktPRvHFACY3xWv4PSiX0icLLw"
+}
+
+## Subscribe to event
+### Description
+	This request requires login. Therefore, you must include the token obtained from the login request in this particular request
+### Request
+
+`POST /api/event/subscribe/id`
+
+    curl -i -H 'Accept: application/json' -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' -X POST http://localhost:5000/api/event/subscribe/id`
+	
+### Response
+
+    HTTP/1.1 200 OK
+    Status: 200 OK
+    Connection: close
+    Content-Type: application/json
+
+{
+    "message": "Subscribed to the event"
+}
+
+## UnSubscribe from event
+### Description
+	This request requires login. Therefore, you must include the token obtained from the login request in this particular request
+### Request
+
+`POST /api/event/unsubscribe/id`
+
+    curl -i -H 'Accept: application/json' -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' -X POST http://localhost:5000/api/event/unsubscribe/id`
+	
+### Response
+
+    HTTP/1.1 200 OK
+    Status: 200 OK
+    Connection: close
+    Content-Type: application/json
+
+{
+    "message": "Unsubscribed to the event"
+}
