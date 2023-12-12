@@ -5,6 +5,7 @@ from const_params.const import HTTP_BAD_REQUEST, HTTP_CREATED, HTTP_INTERNAL_SER
 from datetime import datetime
 from database import db
 from validation import validate_event_data
+from modules import notify_subscribers, notify_subscribers_ws
 
 events_page = Blueprint('events_page', __name__, template_folder='routes/events')
 
@@ -69,9 +70,15 @@ def update_events():
             event.venue = event_data.get('venue', event.venue)
             event.participants = event_data.get('participants', event.participants)
             event.startDate = datetime.strptime(event_data['startDate'], '%Y-%m-%d %H:%M:%S')
-
-            db.session.commit()
             updated_events.append({'id': event.id, 'message': 'Event updated successfully'})
+            
+            #notifyAllSucscribers
+            notify_subscribers(event_id, event.subscribers.all(), 'updated')
+            notify_subscribers_ws(event_id, 'updated')
+        db.session.commit()
+
+        
+
         return jsonify({'events': updated_events})
 
     except ValueError as e:
@@ -98,16 +105,19 @@ def delete_events():
             continue
         db.session.delete(event)
         deleted_events.append({'id': event.id, 'message': 'Event deleted successfully'})
-
+        
+        #notifyAllSucscribers
+        notify_subscribers(event_id, event.subscribers.all(), 'deleted')
+        notify_subscribers_ws(event_id, 'deleted')
     db.session.commit()
 
+    
     return jsonify({'events': deleted_events})
 
 @events_page.route('/api/events', methods=['GET'])
 def get_all_events():
     location = request.args.get('location')
     venue = request.args.get('venue')
-    print(location)
     query = Event.query
     if location:
         query = query.filter(Event.location == location)

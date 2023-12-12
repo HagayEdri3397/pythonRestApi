@@ -120,7 +120,9 @@ python app.py
     Status: 404 Not Found
     Connection: close
     Content-Type: application/json
-
+{
+    "error": "Event not found"
+}
 
 ## Delete an event
 
