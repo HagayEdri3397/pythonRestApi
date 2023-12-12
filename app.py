@@ -17,8 +17,10 @@ db.init_app(app)
 app.register_blueprint(events_page)
 app.register_blueprint(event_page)
 app.register_blueprint(user_page)
+
 limiter.init_app(app)
 socketioServer.init_app(app)
+
 jwt.init_app(app)
 bcrypt.init_app(app)
 
@@ -33,4 +35,4 @@ if __name__ == '__main__':
     thread.start()
     # When flask exists close reminders manager thread
     atexit.register(close_reminders_manager, thread)
-    app.run(debug=True)
+    socketioServer.run(app, debug=True)

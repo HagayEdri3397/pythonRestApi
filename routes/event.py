@@ -7,7 +7,7 @@ from database import db
 from datetime import datetime
 from modules import limiter
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from modules import notify_subscribers
+from modules import notify_subscribers, notify_subscribers_ws
 event_page = Blueprint('event_page', __name__, template_folder='routes')
 
 @event_page.route('/api/event/<int:event_id>', methods=['GET'])
@@ -38,6 +38,7 @@ def update_event(event_id):
 
         #notifyAllSucscribers
         notify_subscribers(event_id, event.subscribers.all(), 'updated')
+        notify_subscribers_ws(event_id, 'updated')
     except ValueError as e:
         return jsonify({'error': str(e)}), HTTP_BAD_REQUEST
     except IntegrityError as e:
@@ -56,6 +57,7 @@ def delete_event(event_id):
     
     #notifyAllSucscribers
     notify_subscribers(event_id, event.subscribers.all(), 'deleted')
+    notify_subscribers_ws(event_id, 'deleted')
     db.session.delete(event)
     db.session.commit()
     return jsonify({'message': 'Event deleted successfully'})

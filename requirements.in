@@ -4,3 +4,5 @@ sqlalchemy
 Flask-Limiter
 Flask-JWT-Extended
 Flask-Bcrypt
+flask_socketio
+Flask-CORS

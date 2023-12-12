@@ -1,33 +1,37 @@
 from flask_socketio import SocketIO
-socketioServer = SocketIO()
-
+socketioServer = SocketIO(cors_allowed_origins="*")
 
 @socketioServer.on('connect')
 def handle_connect():
-    print('Client connected')
+    print(f'Client connected')
 
 @socketioServer.on('disconnect')
 def handle_disconnect():
     print('Client disconnected')
 
-# @socketio.on('event_update')
-# def handle_event_update(data):
-#     event_id = data.get('event_id')
-#     message = data.get('message')
+from flask_socketio import join_room, leave_room
 
-#     # Notify subscribers
-#     notify_subscribers(event_id, message)
+# Client can join to room and get real-time updates about event status 
+@socketioServer.on('join')
+def on_join(data):
+    if not data['room']: 
+        return
+    event_id = data['room']
+    room = f'event_{event_id}'
+    print(f'user joined to room {room}')
+    join_room(room)
 
-#     # Broadcast the update to all connected clients
-#     socketio.emit('event_updated', {'event_id': event_id, 'message': message}, broadcast=True)
+@socketioServer.on('leave')
+def on_leave(data):
+    if not data['room']: 
+        return
+    event_id = data['room']
+    room = f'event_{event_id}'
+    print(f'user joined to room {room}')
+    leave_room(room)
 
-# def notify_subscribers(event_type, event_id, subscribers, message):
-#     # Broadcast the update to all connected clients
-#     socketio.emit(f'event_{event_type}', {'event_id': event_id, 'message': message}, broadcast=True)
-# def notify_subscribers(event_id, message):
-#     event = Event.query.get(event_id)
-#     for user in event.subscribers:
-#         print(f"Notification sent to {user.username}: {message}")
-
-#         # Emit a WebSocket event to the specific user
-#         socketio.emit('event_updated', {'event_id': event_id, 'message': message}, room=user.id)
+def notify_subscribers_ws(event_id, event_type):
+    message = f"The event {event_id} has {event_type}"
+    data = {'event_id': event_id, 'data': message}
+    room = f'event_{event_id}'
+    socketioServer.emit(f'event_{event_type}', data,to = room)

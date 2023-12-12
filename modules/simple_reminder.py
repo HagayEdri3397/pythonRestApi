@@ -1,4 +1,4 @@
 def notify_subscribers(event_id, subscribers, event_type):
     for user in subscribers:
-        message = f"Theevent {event_id} has {event_type}"
+        message = f"The event {event_id} has {event_type}"
         print(f"Notification sent to {user.username}: {message}")
