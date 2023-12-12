@@ -5,6 +5,7 @@ Rest api for alfabet
 - [Setup Instructions](#setup-instructions)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
+  - [Testing](#testing)
 - [API Documentation](#API-Documentation)
   - [CreateNewEvent](#schedule-a-new-event)
   - [GetAnEvent](#get-a-specific-event)
@@ -52,10 +53,16 @@ pip install -r requirements.txt
 python app.py
 ```
 
+## Testing
+ Run the tests using pytest:
+
+```
+python run_tests.py
+```
 
 # API-Documentation
 
-## Schedule a new eventS
+## Schedule a new event
 
 ### Request
 

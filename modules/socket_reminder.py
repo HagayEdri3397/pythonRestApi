@@ -16,7 +16,6 @@ from flask_socketio import join_room, leave_room
 def on_join(data):
     try:
         event_id = data['room']
-        print(event_id)
         room = f'event_{event_id}'
         print(f'user joined to room {room}')
         join_room(room)
