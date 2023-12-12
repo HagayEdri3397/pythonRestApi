@@ -65,11 +65,12 @@ def update_events():
             if not event:
                 updated_events.append({'id': event_id, 'error': 'Event not found'})
                 continue
-            event.title = event_data.get('title', event.title)
-            event.location = event_data.get('location', event.location)
-            event.venue = event_data.get('venue', event.venue)
-            event.participants = event_data.get('participants', event.participants)
-            event.startDate = datetime.strptime(event_data['startDate'], '%Y-%m-%d %H:%M:%S')
+            for key, value in event_data.items():
+                if key == 'startDate':
+                    setattr(event, key, datetime.strptime(value, '%Y-%m-%d %H:%M:%S'))
+                else:
+                    setattr(event, key, value)
+                    
             updated_events.append({'id': event.id, 'message': 'Event updated successfully'})
             
             #notifyAllSucscribers

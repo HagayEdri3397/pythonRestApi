@@ -8,6 +8,7 @@ from datetime import datetime
 from modules import limiter
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from modules import notify_subscribers, notify_subscribers_ws
+
 event_page = Blueprint('event_page', __name__, template_folder='routes')
 
 @event_page.route('/api/event/<int:event_id>', methods=['GET'])
@@ -29,11 +30,11 @@ def update_event(event_id):
         request_data = request.get_json()
         validate_event_data(request_data)
 
-        event.title = request_data.get('title', event.title)
-        event.location = request_data.get('location', event.location)
-        event.venue = request_data.get('venue', event.venue)
-        event.participants = request_data.get('participants', event.participants)
-        event.startDate = datetime.strptime(request_data['startDate'], '%Y-%m-%d %H:%M:%S')
+        for key, value in request_data.items():
+            if key == 'startDate':
+                setattr(event, key, datetime.strptime(value, '%Y-%m-%d %H:%M:%S'))
+            else:
+                setattr(event, key, value)
         db.session.commit()
 
         #notifyAllSucscribers
@@ -68,11 +69,15 @@ def schedule_event():
     try:
         request_data = request.get_json(force=True)
         validate_event_data(request_data)
-        new_event = Event(title=request_data['title'],
-                      location=request_data.get('location'),
-                      venue=request_data.get('venue'),
-                      startDate=datetime.strptime(request_data['startDate'], '%Y-%m-%d %H:%M:%S'),
-                      participants=request_data.get('participants'))
+        new_event_data = {
+        'title': request_data['title'],
+        'location': request_data.get('location'),
+        'venue': request_data.get('venue'),
+        'startDate': datetime.strptime(request_data['startDate'], '%Y-%m-%d %H:%M:%S'),
+        'participants': request_data.get('participants')
+        }
+
+        new_event = Event(**new_event_data)
         db.session.add(new_event)
         db.session.commit()
     except ValueError as e:
